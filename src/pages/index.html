@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Chatter Box - The free, open-source, real-time chatroom web app for secure communications">
+  <meta name="keywords" content="chat, messaging, open source, secure, real-time, communication">
+  <meta name="author" content="Chatter Box Team">
+  <meta property="og:title" content="Chatter Box - Open Source Chat Platform">
+  <meta property="og:description" content="Connect with friends and communities in real-time with our secure, open-source chat platform.">
+  <meta property="og:image" content="/assets/og-image.png">
+  <meta property="og:url" content="https://chatterbox.app">
+  <meta name="twitter:card" content="summary_large_image">
+  
+  <title>Chatter Box - Real-time Chat Application</title>
+  
+  <!-- Favicon and App Icons -->
+  <link rel="icon" href="/assets/favicon.ico">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+  <link rel="manifest" href="/assets/site.webmanifest">
+  <link rel="mask-icon" href="/assets/safari-pinned-tab.svg" color="#38bdf8">
+  <meta name="msapplication-TileColor" content="#075985">
+  <meta name="theme-color" content="#075985">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- JetBrains Mono Font -->
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            primary: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              200: '#bae6fd',
+              300: '#7dd3fc',
+              400: '#38bdf8',
+              500: '#0ea5e9',
+              600: '#0284c7',
+              700: '#0369a1',
+              800: '#075985',
+              900: '#0c4a6e',
+            }
+          },
+          animation: {
+            'bounce-slow': 'bounce 3s infinite',
+            'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'fade-in': 'fadeIn 1s ease-in',
+            'slide-up': 'slideUp 0.5s ease-out',
+            'slide-in-right': 'slideInRight 0.5s ease-out',
+            'typing': 'typing 3.5s steps(40, end), blink-caret .75s step-end infinite',
+            'float': 'float 6s ease-in-out infinite',
+            'glow': 'glow 2s ease-in-out infinite alternate',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
+            },
+            slideUp: {
+              '0%': { transform: 'translateY(20px)', opacity: '0' },
+              '100%': { transform: 'translateY(0)', opacity: '1' },
+            },
+            slideInRight: {
+              '0%': { transform: 'translateX(20px)', opacity: '0' },
+              '100%': { transform: 'translateX(0)', opacity: '1' },
+            },
+            typing: {
+              'from': { width: '0' },
+              'to': { width: '100%' }
+            },
+            'blink-caret': {
+              'from, to': { borderColor: 'transparent' },
+              '50%': { borderColor: 'white' }
+            },
+            float: {
+              '0%, 100%': { transform: 'translateY(0)' },
+              '50%': { transform: 'translateY(-20px)' },
+            },
+            glow: {
+              '0%': { boxShadow: '0 0 5px rgba(56, 189, 248, 0.5)' },
+              '100%': { boxShadow: '0 0 20px rgba(56, 189, 248, 0.8), 0 0 30px rgba(56, 189, 248, 0.6)' },
+            }
+          },
+          backgroundImage: {
+            'hero-pattern': "url('/assets/bg-pattern.svg')",
+            'grid-pattern': "url('/assets/grid-pattern.svg')",
+            'dots-pattern': "url('/assets/dots-pattern.svg')",
+            'circuit-pattern': "url('/assets/circuit-pattern.svg')",
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  
+  <!-- AOS Animation Library -->
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  
+  <!-- Supabase JS -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  
+  <!-- Service Scripts -->
+  <script src="/services/authService.js"></script>
+  <script src="/services/chatService.js"></script>
+  
+  <!-- Main Script -->
+  <script src="/js/home.js" defer></script>
+  
+  <style>
+    body {
+      font-family: 'JetBrains Mono', monospace;
+      background-color: #111827;
+      background-image: 
+        radial-gradient(circle at 25% 25%, rgba(56, 189, 248, 0.05) 0%, transparent 50%),
+        radial-gradient(circle at 75% 75%, rgba(79, 70, 229, 0.05) 0%, transparent 50%),
+        url('/assets/noise-texture.png');
+      background-attachment: fixed;
+    }
+    
+    .typing-container {
+      display: inline-block;
+    }
+    
+    .typing-text {
+      overflow: hidden;
+      border-right: .15em solid white;
+      white-space: nowrap;
+      margin: 0 auto;
+      animation: typing 3.5s steps(40, end), blink-caret .75s step-end infinite;
+    }
+    
+    @keyframes typing {
+      from { width: 0 }
+      to { width: 100% }
+    }
+    
+    @keyframes blink-caret {
+      from, to { border-color: transparent }
+      50% { border-color: white; }
+    }
+    
+    .code-block {
+      background-color: rgba(30, 41, 59, 0.8);
+      border-radius: 0.5rem;
+      padding: 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      position: relative;
+    }
+    
+    .code-block::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(45deg, rgba(59, 130, 246, 0.1), rgba(16, 185, 129, 0.1));
+      border-radius: 0.5rem;
+      z-index: -1;
+    }
+    
+    .glass-card {
+      background: rgba(17, 24, 39, 0.7);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .glow-border {
+      position: relative;
+    }
+    
+    .glow-border::after {
+      content: '';
+      position: absolute;
+      top: -2px;
+      left: -2px;
+      right: -2px;
+      bottom: -2px;
+      background: linear-gradient(45deg, #38bdf8, #6366f1, #38bdf8);
+      border-radius: 0.5rem;
+      z-index: -1;
+      filter: blur(8px);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    .glow-border:hover::after {
+      opacity: 0.7;
+    }
+    
+    .animated-gradient-text {
+      background: linear-gradient(90deg, #38bdf8, #6366f1, #38bdf8);
+      background-size: 200% auto;
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradient 3s linear infinite;
+    }
+    
+    @keyframes gradient {
+      0% { background-position: 0% center; }
+      100% { background-position: 200% center; }
+    }
+    
+    .floating {
+      animation: float 6s ease-in-out infinite;
+    }
+    
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(56, 189, 248, 0.5);
+      pointer-events: none;
+    }
+    
+    .hero-grid-bg {
+      background-size: 50px 50px;
+      background-image: 
+        linear-gradient(to right, rgba(56, 189, 248, 0.05) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(56, 189, 248, 0.05) 1px, transparent 1px);
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(17, 24, 39, 0.5);
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(56, 189, 248, 0.5);
+      border-radius: 3px;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(56, 189, 248, 0.7);
+    }
+  </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen font-mono custom-scrollbar">
+    <!-- Particle background -->
+    <div id="particles-js" class="fixed inset-0 z-0 opacity-30"></div>
+    
+    <main class="relative z-10">
+      <!-- Hero Section with Logo and Tagline -->
+      <section class="py-20 bg-gradient-to-r from-primary-800 to-indigo-900 text-white relative overflow-hidden hero-grid-bg">
+        <!-- Animated background elements -->
+        <div class="absolute inset-0 overflow-hidden">
+          <div class="absolute -top-10 -left-10 w-40 h-40 bg-primary-500 rounded-full opacity-20 animate-pulse-slow"></div>
+          <div class="absolute top-20 right-10 w-60 h-60 bg-indigo-500 rounded-full opacity-20 animate-pulse-slow" style="animation-delay: 1s;"></div>
+          <div class="absolute bottom-10 left-1/4 w-40 h-40 bg-blue-500 rounded-full opacity-20 animate-pulse-slow" style="animation-delay: 2s;"></div>
+          
+          <!-- Floating code snippets -->
+          <div class="absolute top-1/4 right-10 transform rotate-3 opacity-20 hidden lg:block floating" style="animation-delay: 0.5s;">
+            <div class="code-block text-xs w-48">
+              <pre><code>const chat = new ChatterBox();
+  chat.connect();</code></pre>
+            </div>
+          </div>
+          <div class="absolute bottom-1/4 left-10 transform -rotate-2 opacity-20 hidden lg:block floating" style="animation-delay: 1.5s;">
+            <div class="code-block text-xs w-48">
+              <pre><code>socket.on('message', (data) => {
+    renderMessage(data);
+  });</code></pre>
+            </div>
+          </div>
+        </div>
+        
+        <div class="container mx-auto px-4 text-center relative z-10">
+          <div class="flex justify-center mb-6">
+            <img src="/assets/logo.svg" alt="Chatter Box Logo" class="h-24 w-24 animate-pulse-slow">
+          </div>
+          <h1 class="text-5xl md:text-6xl font-bold mb-4 animated-gradient-text" data-aos="fade-down" data-aos-duration="1000">Chatter Box</h1>
+          <div class="typing-container">
+            <p class="text-xl md:text-2xl mb-10 max-w-2xl mx-auto typing-text">The free, open-source, real-time chatroom web app.</p>
+          </div>
+          
+          <div class="mt-12 flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-6" data-aos="zoom-in" data-aos-duration="1000" data-aos-delay="400">
+            <a href="/signup.html" class="bg-white text-primary-800 px-8 py-4 rounded-md font-medium hover:bg-gray-100 transition transform hover:scale-105 hover:shadow-lg text-lg glow-border">Join Now</a>
+            <a href="/about.html" class="border-2 border-white text-white px-8 py-4 rounded-md font-medium hover:bg-white hover:text-primary-800 transition transform hover:scale-105 text-lg">Learn More</a>
+          </div>
+        </div>
+      </section>
+  
+      <!-- Core Values Section -->
+      <section class="py-8 bg-gray-800 bg-opacity-70 backdrop-blur-sm">
+        <div class="container mx-auto px-4 text-center">
+          <div class="flex flex-wrap items-center justify-center gap-6 text-gray-300">
+            <div class="flex items-center p-3 hover:text-primary-400 transition-colors">
+              <i class="fab fa-github text-2xl mr-2"></i>
+              <span>Open Source</span>
+            </div>
+            <div class="flex items-center p-3 hover:text-primary-400 transition-colors">
+              <i class="fas fa-lock text-2xl mr-2"></i>
+              <span>Secure</span>
+            </div>
+            <div class="flex items-center p-3 hover:text-primary-400 transition-colors">
+              <i class="fas fa-dollar-sign text-2xl mr-2"></i>
+              <span>Free to Use</span>
+            </div>
+            <div class="flex items-center p-3 hover:text-primary-400 transition-colors">
+              <i class="fas fa-globe text-2xl mr-2"></i>
+              <span>Community Driven</span>
+            </div>
+            <div class="flex items-center p-3 hover:text-primary-400 transition-colors">
+              <i class="fas fa-bolt text-2xl mr-2"></i>
+              <span>Lightning Fast</span>
+            </div>
+          </div>
+        </div>
+      </section>
+  
+      <!-- Join the Conversation Section -->
+      <section class="py-16 bg-gray-800 bg-opacity-50 relative overflow-hidden">
+        <div class="absolute inset-0 overflow-hidden opacity-10">
+          <div class="absolute top-0 left-0 w-full h-full bg-dots-pattern bg-repeat"></div>
+        </div>
+        
+        <div class="container mx-auto px-4 text-center relative z-10">
+          <h2 class="text-3xl md:text-4xl font-bold mb-6 text-primary-400" data-aos="fade-up">Join the Conversation Today</h2>
+          <p class="text-xl mb-10 max-w-3xl mx-auto text-gray-300" data-aos="fade-up" data-aos-delay="100">
+            Connect with friends, colleagues, and communities in real-time. Share ideas, collaborate on projects, or just hang out - all in a secure, open-source environment.
+          </p>
+          
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            <div class="glass-card p-6 rounded-lg shadow-lg border border-gray-700 transform transition duration-300 hover:scale-105" data-aos="fade-up" data-aos-delay="150">
+              <div class="text-primary-400 text-4xl mb-4">
+                <i class="fas fa-rocket"></i>
+              </div>
+              <h3 class="text-xl font-semibold mb-3">Get Started in Seconds</h3>
+              <p class="text-gray-300">No complicated setup. Just sign up and start chatting immediately.</p>
+            </div>
+            
+            <div class="glass-card p-6 rounded-lg shadow-lg border border-gray-700 transform transition duration-300 hover:scale-105" data-aos="fade-up" data-aos-delay="200">
+              <div class="text-primary-400 text-4xl mb-4">
+                <i class="fas fa-users"></i>
+              </div>
+              <h3 class="text-xl font-semibold mb-3">Build Communities</h3>
+              <p class="text-gray-300">Create public or private rooms for your team, friends, or interest groups.</p>
+            </div>
+            
+            <div class="glass-card p-6 rounded-lg shadow-lg border border-gray-700 transform transition duration-300 hover:scale-105" data-aos="fade-up" data-aos-delay="250">
+              <div class="text-primary-400 text-4xl mb-4">
+                <i class="fas fa-shield-alt"></i>
+              </div>
+              <h3 class="text-xl font-semibold mb-3">Privacy First</h3>
+              <p class="text-gray-300">Your conversations are yours. We prioritize security and privacy.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- Features Section -->
+      <section class="py-16 bg-gray-900 bg-opacity-80 relative">
+        <div class="absolute inset-0 bg-circuit-pattern bg-repeat opacity-5"></div>
+        
+        <div class="container mx-auto px-4 relative z-10">
+          <h2 class="text-3xl md:text-4xl font-bold text-center mb-12 text-primary-400" data-aos="fade-up">Powerful Features</h2>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div class="glass-card p-6 rounded-lg shadow-lg border border-gray-700 transform transition duration-300 hover:-translate-y-2" data-aos="fade-up" data-aos-delay="100">
+              <div class="text-primary-400 text-4xl mb-4">
+                <i class="fas fa-bolt"></i>
+              </div>
+              <h3 class="text-xl font-semibold mb-3 text-white">Real-time Messaging</h3>
+              <p class="text-gray-300">Instant message delivery with live typing indicators and read receipts.</p>
+              <ul class="mt-4 space-y-2 text-gray-300">
+                <li class="flex items-start">
+                  <i class="fas fa-check text-primary-400 mt-1 mr-2"></i>
+                  <span>No refresh needed</span>
+                </li>
+                <li class="flex items-start">
+                  <i class="fas fa-check text-primary-400 mt-1 mr-2"></i>
+                  <span>Typing indicators</span>
+                </li>
+                <li class="flex items-start">
+                  <i class="fas fa-check text-primary-400 mt-1 mr-2"></i>
+                  <span>Delivery confirmations</span>
+                </li>
+              </ul>
+            </div>
+            
+            <div class="glass-card p-6 rounded-lg shadow-lg border border-gray-700 transform transition duration-300 hover:-translate-y-2" data-aos="fade-up" data-aos-delay="200">
+              <div class="text-primary-400 text-4xl mb-4">
+                <i class="fas fa-users"></i>
+              </div>
+              <h3 class="text-xl font-semibold mb-3 text-white">Group Chats</h3>
+              <p class="text-gray-300">Create and manage group conversations with powerful admin controls.</p>
+              <ul class="mt-4 space-y-2 text-gray-300">
+                <li class="flex items-start">
+                  <i class="fas fa-check text-primary-400 mt-1 mr-2"></i>
+                  <span>Public or private rooms</span>
+                </li>
+                <li class="flex items-start">
+                  <i class="fas fa-check text-primary-400 mt-1 mr-2"></i>
+                  <span>Member management</span>
+                </li>
+                <li class="flex items-start">
+                  <i class="fas fa-check text-primary-400 mt-1 mr-2"></i>
+                  <span>Custom permissions</span>
+                </li>
+              </ul>
+            </div>
+            
+            <div class="glass-card p-6 rounded-lg shadow-lg border border-gray-700 transform transition duration-300 hover:-translate-y-2" data-aos="fade-up" data-aos-delay="300">
+              <div class="text-primary-400 text-4xl mb-4">
+                <i class="fas fa-shield-alt"></i>
+              </div>
+              <h3 class="text-xl font-semibold mb-3 text-white">Security & Privacy</h3>
+              <p class="text-gray-300">End-to-end encryption and robust privacy controls keep your data safe.</p>
+              <ul class="mt-4 space-y-2 text-gray-300">
+                <li class="flex items-start">
+                  <i class="fas fa-check text-primary-400 mt-1 mr-2"></i>
+                  <span>End-to-end encryption</span>
+                </li>
+                <li class="flex items-start">
+                  <i class="fas fa-check text-primary-400 mt-1 mr-2"></i>
+                  <span>Self-destructing messages</span>
+                </li>
+                <li class="flex items-start">
+                  <i class="fas fa-check text-primary-400 mt-1 mr-2"></i>
+                  <span>Privacy controls</span>
+                </li>
+              </ul>
+            </div>
+            
+            <div class="glass-card p-6 rounded-lg shadow-lg border border-gray-700 transform transition duration-300 hover:-translate-y-2" data-aos="fade-up" data-aos-delay="400">
+              <div class="text-primary-400 text-4xl mb-4">
+                <i class="fas fa-file-alt"></i>
+              </div>
+              <h3 class="text-xl font-semibold mb-3 text-white">File Sharing</h3>
+              <p class="text-gray-300">Share documents, images, and more with your contacts and groups.</p>
+              <ul class="mt-4 space-y-2 text-gray-300">
+                <li class="flex items-start">
+                  <i class="fas fa-check text-primary-400 mt-1 mr-2"></i>
+                  <span>Drag & drop uploads</span>
+                </li>
+                <li class="flex items-start">
+                  <i class="fas fa-check text-primary-400 mt-1 mr-2"></i>
+                  <span>Preview media files</span>
+                </li>
+                <li class="flex items-start">
+                  <i class="fas fa-check text-primary-400 mt-1 mr-2"></i>
+                  <span>Secure file transfer</span>
+                </li>
+              </ul>
+            </div>
+            
+            <div class="glass-card p-6 rounded-lg shadow-lg border border-gray-700 transform transition duration-300 hover:-translate-y-2" data-aos="fade-up" data-aos-delay="500">
+              <div class="text-primary-400 text-4xl mb-4">
+                <i class="fas fa-code"></i>
+              </div>
+              <h3 class="text-xl font-semibold mb-3 text-white">Code Sharing</h3>
+              <p class="text-gray-300">Share and collaborate on code with syntax highlighting and formatting.</p>
+              <ul class="mt-4 space-y-2 text-gray-300">
+                <li class="flex items-start">
+                  <i class="fas fa-check text-primary-400 mt-1 mr-2"></i>
+                  <span>Syntax highlighting</span>
+                </li>
+                <li class="flex items-start">
+                    <i class="fas fa-check text-primary-400 mt-1 mr-2"></i>
+                    <span>Code formatting</span>
+                  </li>
+                  <li class="flex items-start">
+                    <i class="fas fa-check text-primary-400 mt-1 mr-2"></i>
+                    <span>Multiple language support</span>
+                  </li>
+                </ul>
+              </div>
+              
+              <div class="glass-card p-6 rounded-lg shadow-lg border border-gray-700 transform transition duration-300 hover:-translate-y-2" data-aos="fade-up" data-aos-delay="600">
+                <div class="text-primary-400 text-4xl mb-4">
+                  <i class="fas fa-mobile-alt"></i>
+                </div>
+                <h3 class="text-xl font-semibold mb-3 text-white">Mobile Friendly</h3>
+                <p class="text-gray-300">Access your chats from any device with our responsive design.</p>
+                <ul class="mt-4 space-y-2 text-gray-300">
+                  <li class="flex items-start">
+                    <i class="fas fa-check text-primary-400 mt-1 mr-2"></i>
+                    <span>Responsive interface</span>
+                  </li>
+                  <li class="flex items-start">
+                    <i class="fas fa-check text-primary-400 mt-1 mr-2"></i>
+                    <span>Push notifications</span>
+                  </li>
+                  <li class="flex items-start">
+                    <i class="fas fa-check text-primary-400 mt-1 mr-2"></i>
+                    <span>Offline support</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+    
+        <!-- Demo Section -->
+        <section class="py-20 bg-gray-800 bg-opacity-70 backdrop-blur-sm relative">
+          <div class="absolute inset-0 bg-grid-pattern bg-repeat opacity-5"></div>
+          
+          <div class="container mx-auto px-4 relative z-10">
+            <div class="flex flex-col lg:flex-row items-center gap-12">
+              <div class="w-full lg:w-1/2" data-aos="fade-right">
+                <h2 class="text-3xl md:text-4xl font-bold mb-6 text-primary-400">See Chatter Box in Action</h2>
+                <p class="text-lg mb-6 text-gray-300">
+                  Experience the power and simplicity of our real-time chat platform. Chatter Box combines modern design with powerful features to create the ultimate messaging experience.
+                </p>
+                <ul class="space-y-4 mb-8">
+                  <li class="flex items-start">
+                    <i class="fas fa-check-circle text-primary-400 text-xl mt-1 mr-3"></i>
+                    <span class="text-gray-300">Intuitive and clean user interface</span>
+                  </li>
+                  <li class="flex items-start">
+                    <i class="fas fa-check-circle text-primary-400 text-xl mt-1 mr-3"></i>
+                    <span class="text-gray-300">Blazing fast performance</span>
+                  </li>
+                  <li class="flex items-start">
+                    <i class="fas fa-check-circle text-primary-400 text-xl mt-1 mr-3"></i>
+                    <span class="text-gray-300">Customizable themes and settings</span>
+                  </li>
+                </ul>
+                <a href="/demo.html" class="inline-block bg-primary-600 hover:bg-primary-700 text-white font-medium py-3 px-6 rounded-md transition duration-300 transform hover:scale-105">
+                  Try Live Demo
+                </a>
+              </div>
+              
+              <div class="w-full lg:w-1/2" data-aos="fade-left">
+                <div class="relative rounded-lg overflow-hidden shadow-2xl border border-gray-700 glow-border">
+                  <img src="/assets/app-screenshot.png" alt="Chatter Box Interface" class="w-full">
+                  <div class="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent opacity-40"></div>
+                  <div class="absolute bottom-4 left-4 right-4 flex justify-center">
+                    <button class="bg-white bg-opacity-20 backdrop-blur-sm text-white py-2 px-4 rounded-full hover:bg-opacity-30 transition duration-300 flex items-center">
+                      <i class="fas fa-play mr-2"></i> Watch Demo
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+    
+        <!-- Testimonials Section -->
+        <section class="py-16 bg-gray-900 bg-opacity-80 relative">
+          <div class="absolute inset-0 bg-dots-pattern bg-repeat opacity-5"></div>
+          
+          <div class="container mx-auto px-4 relative z-10">
+            <h2 class="text-3xl md:text-4xl font-bold text-center mb-12 text-primary-400" data-aos="fade-up">What Our Users Say</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <div class="glass-card p-6 rounded-lg shadow-lg border border-gray-700" data-aos="fade-up" data-aos-delay="100">
+                <div class="flex items-center mb-4">
+                  <div class="text-yellow-400 flex">
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                  </div>
+                  <span class="ml-2 text-gray-400">5.0</span>
+                </div>
+                <p class="text-gray-300 mb-6">"Chatter Box has transformed how our team communicates. The real-time features and code sharing capabilities are perfect for our development workflow."</p>
+                <div class="flex items-center">
+                  <img src="/assets/avatars/user1.jpg" alt="User Avatar" class="w-10 h-10 rounded-full mr-3">
+                  <div>
+                    <h4 class="font-medium text-white">Sarah Johnson</h4>
+                    <p class="text-sm text-gray-400">Lead Developer, TechCorp</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="glass-card p-6 rounded-lg shadow-lg border border-gray-700" data-aos="fade-up" data-aos-delay="200">
+                <div class="flex items-center mb-4">
+                  <div class="text-yellow-400 flex">
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star-half-alt"></i>
+                  </div>
+                  <span class="ml-2 text-gray-400">4.5</span>
+                </div>
+                <p class="text-gray-300 mb-6">"I love that Chatter Box is open source and prioritizes privacy. It's fast, reliable, and has all the features I need without the bloat of other messaging apps."</p>
+                <div class="flex items-center">
+                  <img src="/assets/avatars/user2.jpg" alt="User Avatar" class="w-10 h-10 rounded-full mr-3">
+                  <div>
+                    <h4 class="font-medium text-white">Michael Chen</h4>
+                    <p class="text-sm text-gray-400">Privacy Advocate</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="glass-card p-6 rounded-lg shadow-lg border border-gray-700" data-aos="fade-up" data-aos-delay="300">
+                <div class="flex items-center mb-4">
+                  <div class="text-yellow-400 flex">
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                  </div>
+                  <span class="ml-2 text-gray-400">5.0</span>
+                </div>
+                <p class="text-gray-300 mb-6">"As a community organizer, I needed a platform that could handle multiple group chats with ease. Chatter Box exceeded my expectations with its intuitive interface and robust features."</p>
+                <div class="flex items-center">
+                  <img src="/assets/avatars/user3.jpg" alt="User Avatar" class="w-10 h-10 rounded-full mr-3">
+                  <div>
+                    <h4 class="font-medium text-white">Elena Rodriguez</h4>
+                    <p class="text-sm text-gray-400">Community Manager</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+    
+        <!-- CTA Section -->
+        <section class="py-20 bg-gradient-to-r from-primary-800 to-indigo-900 text-white relative overflow-hidden">
+          <div class="absolute inset-0 overflow-hidden">
+            <div class="absolute -top-10 -left-10 w-40 h-40 bg-primary-500 rounded-full opacity-20 animate-pulse-slow"></div>
+            <div class="absolute top-20 right-10 w-60 h-60 bg-indigo-500 rounded-full opacity-20 animate-pulse-slow" style="animation-delay: 1s;"></div>
+            <div class="absolute bottom-10 left-1/4 w-40 h-40 bg-blue-500 rounded-full opacity-20 animate-pulse-slow" style="animation-delay: 2s;"></div>
+          </div>
+          
+          <div class="container mx-auto px-4 text-center relative z-10">
+            <h2 class="text-3xl md:text-4xl font-bold mb-6" data-aos="fade-up">Ready to Start Chatting?</h2>
+            <p class="text-xl mb-10 max-w-3xl mx-auto" data-aos="fade-up" data-aos-delay="100">
+              Join thousands of users already enjoying Chatter Box. Sign up today and experience the future of messaging.
+            </p>
+            
+            <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-6" data-aos="zoom-in" data-aos-delay="200">
+              <a href="/signup.html" class="bg-white text-primary-800 px-8 py-4 rounded-md font-medium hover:bg-gray-100 transition transform hover:scale-105 hover:shadow-lg text-lg">Create Account</a>
+              <a href="/features.html" class="border-2 border-white text-white px-8 py-4 rounded-md font-medium hover:bg-white hover:text-primary-800 transition transform hover:scale-105 text-lg">Explore Features</a>
+            </div>
+          </div>
+        </section>
+    
+        <!-- Footer -->
+        <footer class="bg-gray-900 text-gray-400 py-12 relative">
+          <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
+              <div>
+                <div class="flex items-center mb-4">
+                  <img src="/assets/logo-small.svg" alt="Chatter Box" class="h-8 w-8 mr-2">
+                  <h3 class="text-xl font-bold text-white">Chatter Box</h3>
+                </div>
+                <p class="mb-4">The free, open-source, real-time chatroom web app for everyone.</p>
+                <div class="flex space-x-4">
+                  <a href="https://github.com/chatterbox" class="text-gray-400 hover:text-primary-400 transition-colors">
+                    <i class="fab fa-github text-xl"></i>
+                  </a>
+                  <a href="https://twitter.com/chatterbox" class="text-gray-400 hover:text-primary-400 transition-colors">
+                    <i class="fab fa-twitter text-xl"></i>
+                  </a>
+                  <a href="https://discord.gg/chatterbox" class="text-gray-400 hover:text-primary-400 transition-colors">
+                    <i class="fab fa-discord text-xl"></i>
+                  </a>
+                  <a href="https://reddit.com/r/chatterbox" class="text-gray-400 hover:text-primary-400 transition-colors">
+                    <i class="fab fa-reddit text-xl"></i>
+                  </a>
+                </div>
+              </div>
+              
+              <div>
+                <h4 class="text-white font-medium mb-4">Product</h4>
+                <ul class="space-y-2">
+                  <li><a href="/features.html" class="hover:text-primary-400 transition-colors">Features</a></li>
+                  <li><a href="/security.html" class="hover:text-primary-400 transition-colors">Security</a></li>
+                  <li><a href="/enterprise.html" class="hover:text-primary-400 transition-colors">Enterprise</a></li>
+                  <li><a href="/pricing.html" class="hover:text-primary-400 transition-colors">Pricing</a></li>
+                  <li><a href="/roadmap.html" class="hover:text-primary-400 transition-colors">Roadmap</a></li>
+                </ul>
+              </div>
+              
+              <div>
+                <h4 class="text-white font-medium mb-4">Resources</h4>
+                <ul class="space-y-2">
+                  <li><a href="/docs.html" class="hover:text-primary-400 transition-colors">Documentation</a></li>
+                  <li><a href="/api.html" class="hover:text-primary-400 transition-colors">API</a></li>
+                  <li><a href="/guides.html" class="hover:text-primary-400 transition-colors">Guides</a></li>
+                  <li><a href="/community.html" class="hover:text-primary-400 transition-colors">Community</a></li>
+                  <li><a href="/blog.html" class="hover:text-primary-400 transition-colors">Blog</a></li>
+                </ul>
+              </div>
+              
+              <div>
+                <h4 class="text-white font-medium mb-4">Company</h4>
+                <ul class="space-y-2">
+                    <li><a href="/about.html" class="hover:text-primary-400 transition-colors">About Us</a></li>
+                    <li><a href="/careers.html" class="hover:text-primary-400 transition-colors">Careers</a></li>
+                    <li><a href="/contact.html" class="hover:text-primary-400 transition-colors">Contact</a></li>
+                    <li><a href="/privacy.html" class="hover:text-primary-400 transition-colors">Privacy Policy</a></li>
+                    <li><a href="/terms.html" class="hover:text-primary-400 transition-colors">Terms of Service</a></li>
+                  </ul>
+                </div>
+              </div>
+              
+              <div class="border-t border-gray-800 pt-8 mt-8 flex flex-col md:flex-row justify-between items-center">
+                <p>&copy; 2023 Chatter Box. All rights reserved.</p>
+                <div class="mt-4 md:mt-0">
+                  <select class="bg-gray-800 text-gray-300 py-2 px-3 rounded-md border border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500">
+                    <option value="en">English</option>
+                    <option value="es">Español</option>
+                    <option value="fr">Français</option>
+                    <option value="de">Deutsch</option>
+                    <option value="ja">日本語</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </footer>
+        </main>
+      
+        <!-- Particles.js for background effect -->
+        <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+        
+        <!-- Initialize AOS animations -->
+        <script>
+          document.addEventListener('DOMContentLoaded', function() {
+            // Initialize AOS animation library
+            AOS.init({
+              duration: 800,
+              easing: 'ease-in-out',
+              once: true
+            });
+            
+            // Initialize particles.js
+            particlesJS('particles-js', {
+              "particles": {
+                "number": {
+                  "value": 80,
+                  "density": {
+                    "enable": true,
+                    "value_area": 800
+                  }
+                },
+                "color": {
+                  "value": "#38bdf8"
+                },
+                "shape": {
+                  "type": "circle",
+                  "stroke": {
+                    "width": 0,
+                    "color": "#000000"
+                  },
+                  "polygon": {
+                    "nb_sides": 5
+                  }
+                },
+                "opacity": {
+                  "value": 0.3,
+                  "random": true,
+                  "anim": {
+                    "enable": true,
+                    "speed": 1,
+                    "opacity_min": 0.1,
+                    "sync": false
+                  }
+                },
+                "size": {
+                  "value": 3,
+                  "random": true,
+                  "anim": {
+                    "enable": false,
+                    "speed": 40,
+                    "size_min": 0.1,
+                    "sync": false
+                  }
+                },
+                "line_linked": {
+                  "enable": true,
+                  "distance": 150,
+                  "color": "#38bdf8",
+                  "opacity": 0.2,
+                  "width": 1
+                },
+                "move": {
+                  "enable": true,
+                  "speed": 2,
+                  "direction": "none",
+                  "random": false,
+                  "straight": false,
+                  "out_mode": "out",
+                  "bounce": false,
+                  "attract": {
+                    "enable": false,
+                    "rotateX": 600,
+                    "rotateY": 1200
+                  }
+                }
+              },
+              "interactivity": {
+                "detect_on": "canvas",
+                "events": {
+                  "onhover": {
+                    "enable": true,
+                    "mode": "grab"
+                  },
+                  "onclick": {
+                    "enable": true,
+                    "mode": "push"
+                  },
+                  "resize": true
+                },
+                "modes": {
+                  "grab": {
+                    "distance": 140,
+                    "line_linked": {
+                      "opacity": 0.4
+                    }
+                  },
+                  "bubble": {
+                    "distance": 400,
+                    "size": 40,
+                    "duration": 2,
+                    "opacity": 8,
+                    "speed": 3
+                  },
+                  "repulse": {
+                    "distance": 200,
+                    "duration": 0.4
+                  },
+                  "push": {
+                    "particles_nb": 4
+                  },
+                  "remove": {
+                    "particles_nb": 2
+                  }
+                }
+              },
+              "retina_detect": true
+            });
+          });
+          
+          // Add floating animation to elements with class 'floating'
+          const floatingElements = document.querySelectorAll('.floating');
+          floatingElements.forEach((el, index) => {
+            // Add random delay to each element
+            const delay = Math.random() * 2;
+            el.style.animationDelay = `${delay}s`;
+          });
+        </script>
+      </body>
+      </html>
+      
+    
+  
